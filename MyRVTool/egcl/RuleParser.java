@@ -4,32 +4,77 @@ import java.util.ArrayList;
 
 public class RuleParser {
 
+	public static ArrayList<Rule> rules;
+	public static ArrayList<Foreach> foreaches;
+
 	// Returns index of first ',' (or end of string if none) outside delimiters '<'
 	// and '>'
 	// Throws exceptions if the string contains unbalanced or unclosed delimiters
 	// '<' and '>'
 	static private Integer getIndexEndOfFirstParameter(String s) throws Exception {
-		Integer balance = 0, i;
+		Integer balanceAng = 0, balanceRnd = 0, i;
 
 		for (i = 0; i < s.length(); i++) {
 			switch (s.charAt(i)) {
 			case '<':
-				balance++;
+				balanceAng++;
+				break;
+			case '(':
+				balanceRnd++;
 				break;
 			case '>':
-				if (balance == 0) {
+				if (balanceAng == 0) {
 					throw (new Exception("Unbalanced '<' in parameter types"));
 				}
-				balance--;
+				balanceAng--;
+				break;
+			case ')':
+				if (balanceRnd == 0) {
+					throw (new Exception("Unbalanced '(' in parameter types"));
+				}
+				balanceRnd--;
 				break;
 			case ',':
-				if (balance == 0)
+				if (balanceAng == 0 && balanceRnd == 0)
 					return i;
 			}
 		}
-		if (balance != 0)
+		if (balanceAng != 0)
 			throw (new Exception("Unclosed '<' in parameter types"));
+		if (balanceRnd != 0)
+			throw (new Exception("Unclosed '(' in parameter types"));
 		return i;
+	}
+
+	static private Integer getIndexEndRoundBracket(String s) throws Exception {
+		int indx = s.indexOf(")");
+		if (indx == -1)
+			return -1;
+
+		int indxOpen = s.indexOf("(");
+		if (indxOpen == -1)
+			throw (new Exception("Unbalanced ')' in parameter types"));
+
+		Integer balance = 1, i;
+
+		for (i = indxOpen + 1; i < s.length(); i++) {
+
+			if (balance == 0)
+				break;
+
+			switch (s.charAt(i)) {
+			case '(':
+				balance++;
+				break;
+			case ')':
+				if (balance == 0) {
+					throw (new Exception("Unbalanced '(' in parameter types"));
+				}
+				balance--;
+				break;
+			}
+		}
+		return i - 1;
 	}
 
 	// Returns index of first '->' not enclosed in '(' and ')'
@@ -89,12 +134,11 @@ public class RuleParser {
 		throw (new Exception("Unclosed '{' in rule"));
 	}
 
-	// Single rule parser
 	static public ArrayList<Rule> parseRules(String s) throws Exception {
 		ArrayList<Rule> rules = new ArrayList<Rule>();
 		s = s.trim();
 
-		while (!s.equals("")) {
+		while (!s.equals("") && !s.startsWith("foreach")) {
 			Boolean before = true;
 			String event;
 			ArrayList<String> parameter_types;
@@ -216,7 +260,7 @@ public class RuleParser {
 			s = s.substring(2).trim();
 			Integer index_end_of_action = getCurlyBracketed(s);
 
-			action = s.substring(0, index_end_of_action);
+			action = s.substring(1, index_end_of_action - 1); // drop curly brackets
 			System.out.println("  - Action is [" + action + "]");
 
 			s = s.substring(index_end_of_action).trim();
@@ -225,5 +269,116 @@ public class RuleParser {
 					condition, action));
 		}
 		return rules;
+	}
+
+	static public void parseForeaches(String s) throws Exception {
+		foreaches = new ArrayList<Foreach>();
+		rules = new ArrayList<Rule>();
+		s = s.trim();
+
+		do {
+
+			int indxForeach = s.indexOf("foreach");
+			if (indxForeach != -1) {
+				String tillForeach = s.substring(0, indxForeach);
+				s = s.substring(indxForeach).trim();
+				rules.addAll(parseRules(tillForeach));
+
+				// parse foreach
+				System.out.println("Parsing foreach");
+
+				String foreach_type;
+				String foreach_var;
+
+				ArrayList<String> replicated_state_types = new ArrayList<String>();
+				ArrayList<String> replicated_state_vars = new ArrayList<String>();
+				ArrayList<String> replicated_state_defaults = new ArrayList<String>();
+
+				ArrayList<Rule> rules = new ArrayList<Rule>();
+
+				// foreach target (UserInfo u)
+				Integer index_start_of_foreach_type = s.indexOf('(');
+				if (index_start_of_foreach_type == -1)
+					throw (new Exception("foreach variable type not specified"));
+
+				s = s.substring(index_start_of_foreach_type + 1).trim();
+
+				Integer index_end_of_foreach_type = s.indexOf(' ');
+				if (index_end_of_foreach_type == -1)
+					throw (new Exception("foreach variable name not specified"));
+
+				foreach_type = s.substring(0, index_end_of_foreach_type).trim();
+
+				Integer index_end_of_foreach_var = s.indexOf(')');
+				if (index_end_of_foreach_var == -1)
+					throw (new Exception("foreach variable declaration not concluded"));
+
+				foreach_var = s.substring(index_end_of_foreach_type, index_end_of_foreach_var).trim();
+				System.out.println(" Foreach [" + foreach_type + " " + foreach_var + "]");
+
+				s = s.substring(index_end_of_foreach_var + 1).trim();
+
+				// foreach (UserInfo u) keep (Boolean disabled defaultTo false)
+				Integer index_start_of_keep = s.indexOf("keep");
+				if (index_start_of_keep == -1)
+					throw (new Exception("keep expected"));
+
+				Integer index_start_of_list = s.indexOf("(");
+				if (index_start_of_list == -1)
+					throw (new Exception("Error in state parameters"));
+
+				Integer index_end_of_event_parameters = getIndexEndRoundBracket(s);
+				if (index_end_of_event_parameters == -1)
+					throw (new Exception("Error in state parameters"));
+
+				String parameters_string = s.substring(index_start_of_list + 1, index_end_of_event_parameters).trim();
+
+				while (!parameters_string.equals("")) {
+					Integer pos = getIndexEndOfFirstParameter(parameters_string);
+
+					// Separate first parameter
+					String parameter = parameters_string.substring(0, pos).trim();
+
+					Integer space = parameter.indexOf(' ');
+					Integer index_start_of_defaultTo = parameter.indexOf("defaultTo");
+					if (index_start_of_defaultTo == -1)
+						throw (new Exception("defaultTo expected"));
+
+					String parameter_type = parameter.substring(0, space).trim();
+					String parameter_variable = parameter.substring(space + 1, index_start_of_defaultTo).trim();
+
+					replicated_state_types.add(parameter_type);
+					replicated_state_vars.add(parameter_variable);
+
+					String parameter_default = parameter.substring(index_start_of_defaultTo + 9).trim();
+					replicated_state_defaults.add(parameter_default);
+
+					System.out.println("    - Parameter [" + parameter_variable + "] with type [" + parameter_type
+							+ "] defaulting to [" + parameter_default + "]");
+
+					// Drop the first parameter from the string to be parsed
+					if (pos == parameters_string.length()) {
+						parameters_string = "";
+					} else {
+						parameters_string = parameters_string.substring(pos + 1).trim();
+					}
+				}
+
+				s = s.substring(index_end_of_event_parameters + 1).trim();
+
+				int index_end_foreach = getCurlyBracketed(s);
+				rules = parseRules(s.substring(1, index_end_foreach - 1));
+
+				s = s.substring(index_end_foreach).trim();
+
+				foreaches.add(new Foreach(rules, foreach_type, foreach_var, replicated_state_types,
+						replicated_state_vars, replicated_state_defaults));
+
+			} else {
+				rules.addAll(parseRules(s));
+				s = "";
+			}
+		} while (!s.equals(""));
+
 	}
 }

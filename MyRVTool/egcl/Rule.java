@@ -18,6 +18,17 @@ public class Rule {
 		this.action = action;
 	}
 
+	// Rule with parameters but no target
+	public Rule(Boolean before, String event, ArrayList<String> vars, ArrayList<String> types, String condition,
+			String action) {
+		this(before, event, vars, types, null, null, condition, action);
+	}
+
+	// Rule with no target and no parameters
+	public Rule(Boolean before, String event, String condition, String action) {
+		this(before, event, new ArrayList<String>(), new ArrayList<String>(), null, null, condition, action);
+	}
+
 	// Getters
 	public Event getEvent() {
 		return event;
@@ -110,14 +121,25 @@ public class Rule {
 	}
 
 	public void toAspectJ(AspectJScript aspectJrules) {
-		toAspectJ(aspectJrules, null, null);
+		toAspectJ(aspectJrules, null, null, null);
 	}
 
-	public void toAspectJ(AspectJScript aspectJrules, ArrayList<String> vars, ArrayList<String> defaults) {
+	public void toAspectJ(AspectJScript aspectJrules, String foreach_var, ArrayList<String> vars,
+			ArrayList<String> defaults) {
 
 		String result = event.toAspectJ();
 
-		result += " {\n" + "    if (" + getCondition() + ") {" + getAction() + "}\n" + "  }";
+		if (foreach_var == null)
+			result += " {\n" + "    if (" + getCondition() + ") {" + getAction() + "}\n" + "  }";
+		else {
+			if (condition == "true") {
+				result += " {\n" + replaceReplicatedStateAssignment(getAction(), foreach_var, vars, defaults) + "}\n";
+			} else {
+				result += " {\n" + "    if ("
+						+ replaceReplicatedStateReference(getCondition(), foreach_var, vars, defaults) + ") {\n"
+						+ replaceReplicatedStateAssignment(getAction(), foreach_var, vars, defaults) + "}\n" + "  }\n";
+			}
+		}
 
 		aspectJrules.addAfterAJRule(result);
 

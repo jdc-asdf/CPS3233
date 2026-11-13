@@ -27,5 +27,5 @@ property starting Unfrozen {
 
   Frozen >>>
     before BankAccount.withdraw(..)
-  >>> BAD["Withdrawal while frozen"]
+  >>> BAD[Withdrawal while frozen]
 }

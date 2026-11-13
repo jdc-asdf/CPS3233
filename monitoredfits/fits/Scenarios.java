@@ -4,7 +4,7 @@ import rv.Verification;
 
 public class Scenarios {
 
-	private static Integer SCENARIO_COUNT = 32;
+	private static Integer SCENARIO_COUNT = 2;
 
 	static TransactionSystem transactionsystem = new TransactionSystem();
 

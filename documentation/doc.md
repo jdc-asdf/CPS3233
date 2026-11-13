@@ -20,7 +20,22 @@ The property was formalised using an Automaton. An automaton was chosen because 
 
 ## The Monitor (Results)
 
+```
+Running scenario 1.
+This scenario should violate property 1.
+Withdrawal while frozen
 
+Running scenario 2.
+This scenario should not violate property 1.
+```
+
+Scenario 1:
+Freeze the profile and then make an external payment of 10. The resulting withdrawal occurs while frozen, the monitor returns BAD.
+
+Scenario 2:
+Freeze and Unfreeze the profile and make an external payment of 10. The resulting withdrawal occurs while not frozen so not violation occurs.
+
+The results match the expected outcome.
 
 ## Iteration History
 

@@ -8,12 +8,14 @@ import java.util.Iterator;
 public class EGCLScript {
 
 	// Data
+	private ArrayList<Foreach> foreaches;
 	private ArrayList<Rule> rules;
 	private String verificationCode;
 	private String prelude;
 
 	// Constructors
 	public EGCLScript() {
+		foreaches = new ArrayList<Foreach>();
 		rules = new ArrayList<Rule>();
 		verificationCode = "";
 		prelude = "";
@@ -70,7 +72,9 @@ public class EGCLScript {
 
 		verificationCode = code_txt;
 		prelude = prelude_txt;
-		rules = RuleParser.parseRules(rules_txt);
+		RuleParser.parseForeaches(rules_txt);
+		rules = RuleParser.rules;
+		foreaches = RuleParser.foreaches;
 	}
 
 	// Getters
@@ -84,6 +88,10 @@ public class EGCLScript {
 
 	public String getPrelude() {
 		return prelude;
+	}
+
+	public ArrayList<Foreach> getForeaches() {
+		return foreaches;
 	}
 
 	// Setters
@@ -112,14 +120,25 @@ public class EGCLScript {
 	}
 
 	public String toAspectJ() {
-		AspectJScript aspectJScript = new AspectJScript();
+		AspectJScript aspectJrules = new AspectJScript();
 
-		aspectJScript.addToFilePrelude(prelude);
+		// Start with the prelude
+		aspectJrules.addToFilePrelude(prelude);
+		// Add foreach specific code
+		aspectJrules.addToAspectPrelude("static void setupVerification() {");
+		for (Foreach f : foreaches)
+			aspectJrules.addToAspectPrelude(f.getInit());
+		aspectJrules.addToAspectPrelude("}");
 
-		for (Rule rule : rules)
-			rule.toAspectJ(aspectJScript);
+		// Add the rules from the foreach structures
+		for (Foreach f : foreaches)
+			f.toAspectJ(aspectJrules);
 
-		return aspectJScript.toString();
+		// Add the remaining rules
+		for (Rule r : rules)
+			r.toAspectJ(aspectJrules);
+
+		return aspectJrules.toString();
 	}
 
 }

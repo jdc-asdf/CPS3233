@@ -1,80 +1,53 @@
 
+
 package rv;
 
-import assertion.Assertion;
-import fits.BankAccount;
-import fits.FrontEnd;
-import fits.UserInfo;
-import fits.BackEnd;
+import fits.*;
+
 
 
 
 
 
 public aspect Properties {
+static void setupVerification() {
+}
 
-before (UserInfo u): call(* *.makeGoldUser(..)) &&
-    target(u) &&
-   !(adviceexecution())  &&
-   !cflow(adviceexecution())  &&
-   !cflowbelow(adviceexecution())  {
-    if (!(u.getCountry().equals("Argentina"))) {{ Assertion.alert("P1 violated"); }}
-  }
-
-after (): call(* BackEnd.initialise(..)) &&
+before (): call(* UserInfo.makeFrozen(..)) &&
     args() &&
    !(adviceexecution())  &&
    !cflow(adviceexecution())  &&
    !cflowbelow(adviceexecution())  {
-    if (true) {{ Verification.fitsInitialisation(); }}
+    if (!Verification.hasTriggerede5a5 && Verification.statee5a5.equals("Unfrozen") && (true)) {{}Verification.statee5a5 = "Frozen";Verification.hasTriggerede5a5 = true;}
   }
 
-before (): call(* UserInfo.openSession(..)) &&
+before (): call(* UserInfo.makeUnFrozen(..)) &&
     args() &&
    !(adviceexecution())  &&
    !cflow(adviceexecution())  &&
    !cflowbelow(adviceexecution())  {
-    if (!Verification.isInitialised()) {{ Assertion.alert("P2 violated"); }}
+    if (!Verification.hasTriggerede5a5 && Verification.statee5a5.equals("Frozen") && (true)) {{}Verification.statee5a5 = "Unfrozen";Verification.hasTriggerede5a5 = true;}
   }
 
-after (BankAccount a): call(* BankAccount.withdraw(..)) &&
-    target(a) &&
+before (): call(* BankAccount.withdraw(..)) &&
    !(adviceexecution())  &&
    !cflow(adviceexecution())  &&
    !cflowbelow(adviceexecution())  {
-    if (a.getBalance() < 0) {{ Assertion.alert("P3 violated"); }}
+    if (!Verification.hasTriggerede5a5 && Verification.statee5a5.equals("Frozen") && (true)) {{}Verification.statee5a5 = "BAD";Verification.hasTriggerede5a5 = true; System.out.println("Withdrawal while frozen");}
   }
 
-after (BankAccount a): call(* BankAccount.deposit(..)) &&
-    target(a) &&
+before (): call(* *.*(..)) &&
    !(adviceexecution())  &&
    !cflow(adviceexecution())  &&
    !cflowbelow(adviceexecution())  {
-    if (a.getBalance() < 0) {{ Assertion.alert("P3 violated"); }}
+    if (true) { Verification.hasTriggerede5a5 = false;}
   }
 
-before (FrontEnd fe, Integer uid, String accnum): call(* FrontEnd.ADMIN_approveOpenAccount(..)) &&
-    args(uid, accnum) &&
-    target(fe) &&
+after (): call(* *.*(..)) &&
    !(adviceexecution())  &&
    !cflow(adviceexecution())  &&
    !cflowbelow(adviceexecution())  {
-    if (true) {{ Verification.fitsAdminApprovingAccount(accnum,fe.getBackEnd()); }}
-  }
-
-before (Integer uid, Integer sid, String to_account_number, Double amount): call(* *.USER_payToExternal(..)) &&
-    args(uid, sid, to_account_number, amount) &&
-   !(adviceexecution())  &&
-   !cflow(adviceexecution())  &&
-   !cflowbelow(adviceexecution())  {
-    if (true) {{ Verification.fitsExternalMoneyTransferCount ++; Verification.fitsExternalMoneyTransferAmount += amount; if (Verification.fitsExternalMoneyTransferCount >= 1000 || Verification.fitsExternalMoneyTransferAmount >= 1000000) { Assertion.alert("P8 violated"); } }}
-  }
-
-after (): call(* *.ADMIN_reconcile(..)) &&
-   !(adviceexecution())  &&
-   !cflow(adviceexecution())  &&
-   !cflowbelow(adviceexecution())  {
-    if (true) {{ Verification.fitsExternalMoneyTransferCount = 0; Verification.fitsExternalMoneyTransferAmount = 0.0; }}
+    if (true) { Verification.hasTriggerede5a5 = false; }
   }
 
 }

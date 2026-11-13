@@ -1,0 +1,6 @@
+Running scenario 1.
+This scenario should violate property 1.
+Withdrawal while frozen
+
+Running scenario 2.
+This scenario should not violate property 1.
