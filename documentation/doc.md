@@ -18,6 +18,8 @@ Based on the information given in Section 3.1 Usermode:
 
 The property was formalised using an Automaton. An automaton was chosen because the property defines an order of events that should occur. The order in this case is: if a profile goes from unfrozen to frozen it then may not have withdraws on its accounts, but if it is unfrozen then it can allow withdraws again. The account can be represented as states in the automaton while the freezing/unfreezing and withdrawl can be represented as transitions in the automaton.
 
+However while an automaton fits the property quite well it can also be represented by a regular expression, the only drawback being that the expression would be quite complex. 
+
 ## The Monitor (Results)
 
 ```
@@ -36,6 +38,27 @@ Scenario 2:
 Freeze and Unfreeze the profile and make an external payment of 10. The resulting withdrawal occurs while not frozen so not violation occurs.
 
 The results match the expected outcome.
+
+## Trace Sets
+The property should accept any trace where a freeze is followed by an unfreeze before any withdrawl occurs and a withdraw before any freeze occurs.
+
+Some examples:
+```
+REJECTED:
+freeze() -> withdrawl() 
+freeze() -> unfreeze() -> freeze() -> withdrawl() 
+```
+
+```
+ACCEPTED:
+freeze() -> unfreeze() -> withdraw() 
+freeze() -> unfreeze() -> withdraw() -> freeze() 
+freeze() -> unfreeze() -> withdraw() -> freeze() -> unfreeze() -> withdraw()
+freeze() -> unfreeze() -> freeze() -> unfreeze() -> withdraw() 
+withdraw()
+withdraw() -> withdraw() -> withdraw()
+freeze() 
+```
 
 ## Iteration History
 
