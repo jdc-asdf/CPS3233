@@ -1,11 +1,14 @@
 # CPS3233 Assignment Part A
+## Julian David Cassar
+
+<div style="page-break-before: always;"></div>
 
 ## The Property
 
-Once a user freezes their profile, none of their money accounts may be withdrawn from until they unfreeze it.
+> Once a user freezes their profile, none of their money accounts may be withdrawn from until they unfreeze it.
 
 Based on the information given in Section 3.1 Usermode:
-> "frozen users may not perform money transfers"
+"frozen users may not perform money transfers"
 
 ## The Formalism
 
@@ -14,3 +17,14 @@ Based on the information given in Section 3.1 Usermode:
 </p>
 
 The property was formalised using an Automaton. An automaton was chosen because the property defines an order of events that should occur. The order in this case is: if a profile goes from unfrozen to frozen it then may not have withdraws on its accounts, but if it is unfrozen then it can allow withdraws again. The account can be represented as states in the automaton while the freezing/unfreezing and withdrawl can be represented as transitions in the automaton.
+
+## The Monitor (Results)
+
+
+
+## Iteration History
+
+Initially considered the property to be debited and credited, (i.e. no money goes in or out of the account) but the wording of apendix seems to  point towards the user themsevles **performing* a transfer not someone else sending them money.
+
+Changed from checking the front end  for freezes to checking user info. This is a  more appropriate place to check as if freezing is extended to be done through other features it would require the monitor to be modified.
+
