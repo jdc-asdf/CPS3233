@@ -62,6 +62,37 @@ public class AutomatonParser {
 		return i;
 	}
 
+	static private Integer getIndexEndRoundBracket(String s) throws Exception {
+		int indx = s.indexOf(")");
+		if (indx == -1)
+			return -1;
+
+		int indxOpen = s.indexOf("(");
+		if (indxOpen == -1)
+			throw (new Exception("Unbalanced ')' in parameter types"));
+
+		Integer balance = 1, i;
+
+		for (i = indxOpen + 1; i < s.length(); i++) {
+
+			if (balance == 0)
+				break;
+
+			switch (s.charAt(i)) {
+			case '(':
+				balance++;
+				break;
+			case ')':
+				if (balance == 0) {
+					throw (new Exception("Unbalanced '(' in parameter types"));
+				}
+				balance--;
+				break;
+			}
+		}
+		return i - 1;
+	}
+
 	// Returns index of first ' ' or '[' or '}'
 	static private Integer getIndexEndOfDestinationState(String s) throws Exception {
 		Integer i;
@@ -176,14 +207,77 @@ public class AutomatonParser {
 
 			s = s.substring(index_start_state + 8).trim();
 
-			Integer index_start_transitions = s.indexOf("{");
-			if (index_start_transitions == -1)
+			Integer index_end_starting = s.indexOf("{");
+			if (index_end_starting == -1)
 				throw (new Exception("{ not found"));
 
-			starting_state = s.substring(0, index_start_transitions).trim();
+			Integer index_keep = s.indexOf("keep");
+			if (index_keep != -1 && index_keep < index_end_starting)
+				index_end_starting = index_keep;
 
-			s = s.substring(index_start_transitions + 1).trim();
+			starting_state = s.substring(0, index_end_starting).trim();
 
+			s = s.substring(index_end_starting).trim();
+
+			ArrayList<String> replicated_state_types = new ArrayList<String>();
+			ArrayList<String> replicated_state_vars = new ArrayList<String>();
+			ArrayList<String> replicated_state_defaults = new ArrayList<String>();
+
+			// foreach (UserInfo u) keep (Boolean disabled defaultTo false)
+			// Integer index_start_of_keep = s.indexOf("keep");
+			if (s.startsWith("keep")) {
+				// note that in the case of automata, keep is optional
+				// this is not so in the case of GCL as a foreach doesn't make sense without any
+				// state
+
+				Integer index_start_of_list = s.indexOf("(");
+				if (index_start_of_list == -1)
+					throw (new Exception("Error in state parameters"));
+
+				Integer index_end_of_event_parameters = getIndexEndRoundBracket(s);
+				if (index_end_of_event_parameters == -1)
+					throw (new Exception("Error in state parameters"));
+
+				String parameters_string = s.substring(index_start_of_list + 1, index_end_of_event_parameters).trim();
+
+				while (!parameters_string.equals("")) {
+					Integer pos = getIndexEndOfFirstParameter(parameters_string);
+
+					// Separate first parameter
+					String parameter = parameters_string.substring(0, pos).trim();
+
+					Integer space = parameter.indexOf(' ');
+					Integer index_start_of_defaultTo = parameter.indexOf("defaultTo");
+					if (index_start_of_defaultTo == -1)
+						throw (new Exception("defaultTo expected"));
+
+					String parameter_type = parameter.substring(0, space).trim();
+					String parameter_variable = parameter.substring(space + 1, index_start_of_defaultTo).trim();
+
+					replicated_state_types.add(parameter_type);
+					replicated_state_vars.add(parameter_variable);
+
+					String parameter_default = parameter.substring(index_start_of_defaultTo + 9).trim();
+					replicated_state_defaults.add(parameter_default);
+
+					System.out.println("    - Parameter [" + parameter_variable + "] with type [" + parameter_type
+							+ "] defaulting to [" + parameter_default + "]");
+
+					// Drop the first parameter from the string to be parsed
+					if (pos == parameters_string.length()) {
+						parameters_string = "";
+					} else {
+						parameters_string = parameters_string.substring(pos + 1).trim();
+					}
+				} // while
+
+				s = s.substring(index_end_of_event_parameters + 1).trim();
+			} // end of keep
+
+			if (s.startsWith("{"))
+				s = s.substring(1).trim();
+
+			// transitions
 			ArrayList<Transition> transitions = new ArrayList<Transition>();
 
 			// loop over transitions
@@ -229,13 +323,13 @@ public class AutomatonParser {
 				s = s.substring(index_end_of_event + 1).trim();
 
 				// Parameters
-				Integer index_end_of_event_parameters = s.indexOf(')');
-				if (index_end_of_event_parameters == -1)
+				Integer index_end_of_event_parameters2 = s.indexOf(')');
+				if (index_end_of_event_parameters2 == -1)
 					throw (new Exception("Error in event parameters"));
 
-				String parameters_string = s.substring(0, index_end_of_event_parameters).trim();
+				String parameters_string2 = s.substring(0, index_end_of_event_parameters2).trim();
 
-				if (parameters_string.equals("..")) {
+				if (parameters_string2.equals("..")) {
 					parameter_types = null;
 					parameter_variables = null;
 					System.out.println("    - Generic parameter matching");
@@ -243,11 +337,11 @@ public class AutomatonParser {
 					parameter_types = new ArrayList<String>();
 					parameter_variables = new ArrayList<String>();
 
-					while (!parameters_string.equals("")) {
-						Integer pos = getIndexEndOfFirstParameter(parameters_string);
+					while (!parameters_string2.equals("")) {
+						Integer pos = getIndexEndOfFirstParameter(parameters_string2);
 
 						// Separate first parameter
-						String parameter = parameters_string.substring(0, pos).trim();
+						String parameter = parameters_string2.substring(0, pos).trim();
 
 						Integer space = parameter.lastIndexOf(' ');
 						String parameter_type = parameter.substring(0, space).trim();
@@ -259,15 +353,15 @@ public class AutomatonParser {
 								"    - Parameter [" + parameter_variable + "] with type [" + parameter_type + "]");
 
 						// Drop the first parameter from the string to be parsed
-						if (pos == parameters_string.length()) {
-							parameters_string = "";
+						if (pos == parameters_string2.length()) {
+							parameters_string2 = "";
 						} else {
-							parameters_string = parameters_string.substring(pos + 1).trim();
+							parameters_string2 = parameters_string2.substring(pos + 1).trim();
 						}
-					}
-				}
+					} // while
+				} // else
 
-				s = s.substring(index_end_of_event_parameters + 1).trim();
+				s = s.substring(index_end_of_event_parameters2 + 1).trim();
 
 				// Target
 				if (s.startsWith("target")) {
@@ -294,7 +388,7 @@ public class AutomatonParser {
 					target_variable = null;
 
 					System.out.println("  - No target named");
-				}
+				} // else
 
 				// Guard (optional)
 
@@ -370,7 +464,8 @@ public class AutomatonParser {
 			// consume } ending automaton declaration
 			s = s.substring(1).trim();
 
-			automata.add(new Automaton(starting_state, transitions, target_type, target_variable));
+			automata.add(new Automaton(starting_state, transitions, target_type, target_variable,
+					replicated_state_types, replicated_state_vars, replicated_state_defaults));
 
 		}
 

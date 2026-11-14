@@ -3,17 +3,20 @@ VERIFICATIONCODE
 
 package rv;
 
+import fits.*;
+import java.util.HashMap;
+
 public class Verification {
 public static void setupVerification() {
 Properties.setupVerification();
 
 
-hasTriggerede5a5 = false;
-statee5a5 = "Unfrozen";}
+hasTriggerede5a5 = new HashMap<UserInfo,Boolean> ();
+statee5a5 = new HashMap<UserInfo,String> ();}
 
 
-static public String statee5a5;
-static public Boolean hasTriggerede5a5;
+static public HashMap<UserInfo,String> statee5a5;
+static public HashMap<UserInfo,Boolean> hasTriggerede5a5;
 }
 
 PRELUDE
@@ -22,28 +25,30 @@ PRELUDE
 package rv;
 
 import fits.*;
+import java.util.HashMap;
 
 
 
 RULES
 
+foreach target (UserInfo u) keep (Boolean hasTriggerede5a5 defaultTo false, String statee5a5 defaultTo "Unfrozen") { 
+
+UserInfo.makeFrozen()target (UserInfo u) | !hasTriggerede5a5 && statee5a5.equals("Unfrozen") && (true)
+  -> {{}statee5a5 = "Frozen";hasTriggerede5a5 = true;}
 
 
-UserInfo.makeFrozen() | !Verification.hasTriggerede5a5 && Verification.statee5a5.equals("Unfrozen") && (true)
-  -> {{}Verification.statee5a5 = "Frozen";Verification.hasTriggerede5a5 = true;}
+UserInfo.makeUnFrozen()target (UserInfo u) | !hasTriggerede5a5 && statee5a5.equals("Frozen") && (true)
+  -> {{}statee5a5 = "Unfrozen";hasTriggerede5a5 = true;}
 
 
-UserInfo.makeUnFrozen() | !Verification.hasTriggerede5a5 && Verification.statee5a5.equals("Frozen") && (true)
-  -> {{}Verification.statee5a5 = "Unfrozen";Verification.hasTriggerede5a5 = true;}
-
-
-BankAccount.withdraw(..) | !Verification.hasTriggerede5a5 && Verification.statee5a5.equals("Frozen") && (true)
-  -> {{}Verification.statee5a5 = "BAD";Verification.hasTriggerede5a5 = true;
+UserInfo.withdrawFrom(..)target (UserInfo u) | !hasTriggerede5a5 && statee5a5.equals("Frozen") && (true)
+  -> {{}statee5a5 = "BAD";hasTriggerede5a5 = true;
  System.out.println("Withdrawal while frozen");}
 
+}
 before *.*(..) | -> { 
-Verification.hasTriggerede5a5 = false;}
+hasTriggerede5a5 = new HashMap<UserInfo,Boolean> ();}
 
 after *.*(..) | -> { 
-Verification.hasTriggerede5a5 = false;
+hasTriggerede5a5 = new HashMap<UserInfo,Boolean> ();
 }

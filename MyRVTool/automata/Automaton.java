@@ -10,16 +10,25 @@ public class Automaton {
 	private String target_type;
 	private String target_variable;
 
-	public Automaton(String start_state, ArrayList<Transition> transitions, String foreach_type,
-			String foreach_variable) {
+	ArrayList<String> replicated_state_types;
+	ArrayList<String> replicated_state_vars;
+	ArrayList<String> replicated_state_defaults;
+
+	public Automaton(String start_state, ArrayList<Transition> transitions, String target_type, String target_variable,
+			ArrayList<String> replicated_state_types, ArrayList<String> replicated_state_vars,
+			ArrayList<String> replicated_state_defaults) {
 		this.start_state = start_state;
 		this.transitions = transitions;
-		this.target_type = foreach_type;
-		this.target_variable = foreach_variable;
+		this.target_type = target_type;
+		this.target_variable = target_variable;
+
+		this.replicated_state_types = replicated_state_types;
+		this.replicated_state_vars = replicated_state_vars;
+		this.replicated_state_defaults = replicated_state_defaults;
 	}
 
 	public Automaton(String start_state, ArrayList<Transition> transitions) {
-		this(start_state, transitions, null, null);
+		this(start_state, transitions, null, null, null, null, null);
 	}
 
 	// getters
@@ -27,11 +36,11 @@ public class Automaton {
 		return start_state;
 	}
 
-	public String getTargetType() {
+	public String getForeachType() {
 		return target_type;
 	}
 
-	public String getTargetVariable() {
+	public String getForeachVariable() {
 		return target_variable;
 	}
 
@@ -43,7 +52,15 @@ public class Automaton {
 			result += "foreach target (" + target_type + " " + target_variable + ") ";
 		}
 
-		result += "starting " + start_state + "{ ";
+		result += "starting " + start_state;
+
+		result += " keep ( ";
+
+		for (int i = 0; i < replicated_state_types.size(); i++)
+			result += replicated_state_types.get(i) + " " + replicated_state_vars.get(i) + " defaultTo "
+					+ replicated_state_defaults.get(i) + ", ";
+
+		result += ") { ";
 
 		for (Transition t : transitions)
 			result += t.toString();
@@ -83,14 +100,35 @@ public class Automaton {
 		String result = "";
 		String id = super.toString().substring(22);// string id from object toString
 
+		if (target_type != null)
+		// foreach
+		{
+			// foreach (UserInfo u) keep (Boolean disabled defaultTo false) {
+			result += "foreach target (" + target_type + " " + target_variable + ") keep (Boolean hasTriggered" + id
+					+ " defaultTo false, String state" + id + " defaultTo \"" + start_state + "\"";
+
+			for (int i = 0; i < replicated_state_types.size(); i++)
+				result += "," + replicated_state_types.get(i) + " " + replicated_state_vars.get(i) + " defaultTo "
+						+ replicated_state_defaults.get(i);
+
+			result += ") { ";
+
+		}
+
 		for (Transition t : transitions)
 			result += t.toEGCL(id, target_type);
+
+		if (target_type != null)
+		// foreach
+		{
+			result += "\n}";
+		}
 
 		return result;
 	}
 
 	public String getInit() {
-		return "init" + super.toString().substring(19) + "(); ";
+		return "init" + super.toString().substring(22) + "(); ";
 	}
 
 	// toEGCL verification code (declaration of variables)
@@ -100,9 +138,7 @@ public class Automaton {
 		if (target_type != null)
 			// foreach
 			return "hasTriggered" + id + " = new HashMap<" + target_type + ",Boolean> ();";
-
 		else
 			return "Verification.hasTriggered" + id + " = false;";
 	}
-
 }

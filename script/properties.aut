@@ -2,6 +2,9 @@ VERIFICATIONCODE
 
 package rv;
 
+import fits.*;
+import java.util.HashMap;
+
 public class Verification {
     public static void setupVerification() {
         Properties.setupVerification();
@@ -13,19 +16,20 @@ PRELUDE
 package rv;
 
 import fits.*;
+import java.util.HashMap;
 
 AUTOMATA
 
-property starting Unfrozen {
+property foreach target (UserInfo u) starting Unfrozen {
   Unfrozen >>>
-    after UserInfo.makeFrozen()
+    before UserInfo.makeFrozen() target (UserInfo u)
   >>> Frozen
 
   Frozen >>>
-    after UserInfo.makeUnFrozen()
+    before UserInfo.makeUnFrozen() target (UserInfo u)
   >>> Unfrozen
 
   Frozen >>>
-    before BankAccount.withdraw(..)
+    before UserInfo.withdrawFrom(..) target (UserInfo u)
   >>> BAD[Withdrawal while frozen]
 }

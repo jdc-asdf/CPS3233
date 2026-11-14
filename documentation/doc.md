@@ -67,9 +67,11 @@ The automaton tracks whether a freeze has occurred without a subsequent successf
 
 ## Iteration History
 
-Initially considered the property to be debited and credited, (i.e. no money goes in or out of the account) but the wording of apendix seems to  point towards the user themsevles **performing* a transfer not someone else sending them money.
+Initially considered the property to be "Once a user freezes their profile, their account may not be debited and credited", (i.e. no money goes in or out of the account) but the wording of appendix seems to  point towards the user themsevles **performing* a transfer not someone else sending them money, so only withdraws were considered.
 
-Changed from checking the front end  for freezes to checking user info. This is a  more appropriate place to check as if freezing is extended to be done through other features it would require the monitor to be modified.
+Changed from checking the front end for freezes to checking user info. This is more appropriate place to check as if freezing is extended to be done through other features it would require the monitor to be modified.
+
+The initial monitor used one global automaton state, which could flag one user’s freeze or unfreeze events with another user’s withdrawals. This was changed to a paramterised automaton to fix this issue.
 
 ## Subtleties
 
