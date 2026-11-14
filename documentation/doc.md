@@ -1,6 +1,8 @@
 # CPS3233 Assignment Part A
 ## Julian David Cassar
 
+https://github.com/jdc-asdf/CPS3233
+
 <div style="page-break-before: always;"></div>
 
 ## The Property
@@ -60,9 +62,15 @@ withdraw() -> withdraw() -> withdraw()
 freeze() 
 ```
 
+## Correctness
+The automaton tracks whether a freeze has occurred without a subsequent successful unfreeze. A withdrawal in this state leads to BAD, otherwise, it is permitted. The monitor checks withdrawls which covers any transfer method.
+
 ## Iteration History
 
 Initially considered the property to be debited and credited, (i.e. no money goes in or out of the account) but the wording of apendix seems to  point towards the user themsevles **performing* a transfer not someone else sending them money.
 
 Changed from checking the front end  for freezes to checking user info. This is a  more appropriate place to check as if freezing is extended to be done through other features it would require the monitor to be modified.
 
+## Subtleties
+
+## AI account
