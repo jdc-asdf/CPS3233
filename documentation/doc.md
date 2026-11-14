@@ -63,7 +63,7 @@ freeze()
 ```
 
 ## Correctness
-The automaton tracks whether a freeze has occurred without a subsequent successful unfreeze. A withdrawal in this state leads to BAD, otherwise, it is permitted. The monitor checks withdrawls which covers any transfer method.
+The automaton tracks whether a freeze has occurred without a subsequent successful unfreeze. A withdrawal in this state leads to BAD, otherwise, it is permitted. The monitor checks withdrawls generally, which covers any transfer method on the frontend.
 
 ## Iteration History
 
@@ -74,5 +74,7 @@ Changed from checking the front end for freezes to checking user info. This is m
 The initial monitor used one global automaton state, which could flag one user’s freeze or unfreeze events with another user’s withdrawals. This was changed to a paramterised automaton to fix this issue.
 
 ## Subtleties
+The property written in english translated quite well to the formalisation, there were no ambiguities to be considered. 
 
 ## AI account
+AI assistance helped develop the property, explain the automaton notation, and troubleshoot compilation errors (For compiling MyRVTool). Its initial proposal used a global state that could mix events from different users; this was corrected using parameterised automata.
